@@ -51,13 +51,33 @@ class BuildNOAAMongo:
 		self.load_stations()
 		for fname in os.listdir('%s/noaa_raw' % self.temp_dir):
 			self.uptake_hx(fname)
-	def create_indexes(self):
-		keys = list()
-		print 'generating list of fields...'
-		for doc in self.hx.find():
-			keys = list(set(keys + doc.keys() ))
-		for key in ['_id', 'date', 'station', 'loc']:
-			keys.remove(key)
+
+    def _get_avail_keys(self):
+        keys = list()
+        print 'generating list of fields...'
+        for doc in self.hx.find():
+            keys = list(set(keys + doc.keys()))
+        for key in ['_id', 'date', 'station', 'loc']:
+            keys.remove(key)
+        self.avail_keys= keys
+
+    def create_indexes(self, keys):
 		for key in keys:
-			print 'creating compound index on date->%s->location' %key
-			self.hx.create_index([('date', 1), (key, 1), ('loc', GEOSPHERE)])
+            self.create_index(key)
+
+
+    def create_index(self, key, refresh_avail_keys=False):
+        if refresh_avail_keys:
+            self._get_avail_keys()
+        if key in self.avail_keys:
+            print 'creating compound index on date->%s->location' %key
+		    self.hx.create_index([('date', 1), (key, 1), ('loc', GEOSPHERE)])
+         else:
+                print '%s does not exist in hx' % key
+
+    def dump_all_indexes(self, compact_on_complete=True):
+        print 'dumping all indexes... this may take a while'
+        self.hx.drop_indexes()
+        if compact_on_complete:
+            self.m_db.command('compact', 'hx')
+        print 'all indexes dumped'
