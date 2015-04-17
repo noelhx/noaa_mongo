@@ -126,7 +126,7 @@ class NOAAMongoManager:
         :param closest_n:   int
         :return: pd.df
         """
-        date_range = (datetime(2013, 12, 3), datetime(2013,12,8))
+        date_range = (start_date, end_date)
         days_needed = (date_range[1] - date_range[0]).days
         dates_needed = [ date_range[0] + timedelta(days= x) for x in range(0, days_needed) ]
         output = pd.DataFrame([{'date': date, 'val': self.avg_val(self.fetch_df_on_date( date, point, key, closest_n), key, point) } for date in dates_needed])
